@@ -28,7 +28,7 @@ jobs:
           for item in index.html css js data assets; do
             [ -e "$SRC/$item" ] && cp -r "$SRC/$item" www/
           done
-          cat > package.json << 'EOF'
+          cat > package.json << 'EOF2'
           {
             "name": "after-zero",
             "version": "1.0.0",
@@ -39,21 +39,28 @@ jobs:
               "@capacitor/core": "^7.0.0"
             }
           }
-          EOF
-          cat > capacitor.config.json << 'EOF'
+          EOF2
+          cat > capacitor.config.json << 'EOF2'
           {
             "appId": "com.afterzero.game",
             "appName": "AFTER ZERO",
             "webDir": "www",
             "backgroundColor": "#0b0d12"
           }
-          EOF
+          EOF2
 
       - name: Install dependencies
-        run: npm install
+        run: |
+          npm install
+          npm install @capacitor-community/text-to-speech@^7 || npm install @capacitor-community/text-to-speech --legacy-peer-deps
 
       - name: Add Android platform
         run: npx cap add android
+
+      - name: Allow TTS engine lookup (Android 11+)
+        run: |
+          sed -i 's|<application|<queries><intent><action android:name="android.intent.action.TTS_SERVICE"/></intent></queries>\n    <application|' android/app/src/main/AndroidManifest.xml
+          grep -n "TTS_SERVICE" android/app/src/main/AndroidManifest.xml
 
       - name: Sync web files
         run: npx cap sync android
