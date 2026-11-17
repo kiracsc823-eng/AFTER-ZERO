@@ -20,6 +20,35 @@ jobs:
           distribution: temurin
           java-version: 21
 
+      - name: Prepare Capacitor project
+        run: |
+          SRC=$(dirname "$(find . -name index.html -not -path './node_modules/*' -not -path './www/*' | head -1)")
+          echo "Game folder: $SRC"
+          mkdir -p www
+          for item in index.html css js data assets; do
+            [ -e "$SRC/$item" ] && cp -r "$SRC/$item" www/
+          done
+          cat > package.json << 'EOF'
+          {
+            "name": "after-zero",
+            "version": "1.0.0",
+            "private": true,
+            "dependencies": {
+              "@capacitor/android": "^7.0.0",
+              "@capacitor/cli": "^7.0.0",
+              "@capacitor/core": "^7.0.0"
+            }
+          }
+          EOF
+          cat > capacitor.config.json << 'EOF'
+          {
+            "appId": "com.afterzero.game",
+            "appName": "AFTER ZERO",
+            "webDir": "www",
+            "backgroundColor": "#0b0d12"
+          }
+          EOF
+
       - name: Install dependencies
         run: npm install
 
