@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="hi-Latn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>AFTER ZERO</title>
+<meta name="description" content="Ek anant post-apocalyptic survival adventure. Mar jao. Yaad rakho. Laut aao.">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#07080c">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230b0d12'/%3E%3Crect x='4' y='2' width='8' height='2' fill='%23d6483b'/%3E%3Crect x='3' y='4' width='2' height='8' fill='%23d6483b'/%3E%3Crect x='11' y='4' width='2' height='8' fill='%23d6483b'/%3E%3Crect x='4' y='12' width='8' height='2' fill='%23d6483b'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/animations.css">
+</head>
+<body>
+<div id="stage" class="scanlines">
+  <canvas id="scene" width="320" height="180"></canvas>
+  <div id="vignette"></div>
+
+  <!-- HUD -->
+  <div id="hud" class="hidden">
+    <div id="statbar"></div>
+    <div id="infobar">
+      <span id="hud-chapter"></span>
+      <span id="hud-location"></span>
+      <span id="hud-timeline"></span>
+      <span id="hud-oxygen" class="hidden"></span>
+    </div>
+    <div id="objective"></div>
+    <nav id="navbar">
+      <button data-panel="inventory" title="Samaan (I)">SAMAAN</button>
+      <button data-panel="journal" title="Diary (J)">DIARY</button>
+      <button data-panel="memories" title="Yaadein (M)">YAADEIN</button>
+      <button data-panel="people" title="Rishte (P)">LOG</button>
+      <button data-panel="saves" title="Save / Load (S)">SAVE</button>
+      <button data-panel="history" title="Baatcheet ka itihaas (H)">ITIHAAS</button>
+      <button data-panel="pause" title="Menu (Esc)">MENU</button>
+    </nav>
+  </div>
+
+  <!-- Dialogue + choices -->
+  <div id="choices" class="hidden" role="group" aria-label="Vikalp"></div>
+  <div id="dialog" class="hidden">
+    <canvas id="speaker-portrait" width="48" height="48"></canvas>
+    <div id="dialog-body">
+      <div id="speaker-name"></div>
+      <div id="dialog-text" aria-live="polite"></div>
+    </div>
+    <button id="continue" aria-label="Aage badhein">▼</button>
+  </div>
+
+  <!-- Voice controls (compact) -->
+  <div id="voice-dock" class="hidden" role="group" aria-label="Voice narration">
+    <button id="vd-toggle" title="Voice ON/OFF">VOICE ON</button>
+    <div id="vd-bars" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+    <div class="vd-row">
+      <button id="vd-replay" title="Replay narration" aria-label="Replay narration">&#8635;</button>
+      <button id="vd-pause" title="Pause / Resume" aria-label="Pause or resume">&#10074;&#10074;</button>
+      <button id="vd-more" title="Volume, speed, language" aria-label="Voice settings">&#9881;</button>
+    </div>
+    <button id="vd-mute" title="Mute voice">MUTE</button>
+    <div id="vd-pop" class="hidden">
+      <label>VOLUME <input id="vd-vol" type="range" min="0" max="1" step="0.05"></label>
+      <label>SPEED <input id="vd-rate" type="range" min="0.6" max="1.5" step="0.05"></label>
+      <button id="vd-diag" title="Voice diagnostics">DIAG</button>
+      <label>BHASHA <select id="vd-lang"><option value="auto">Auto</option><option value="hi">Hindi</option><option value="en">English / Hinglish</option></select></label>
+    </div>
+  </div>
+
+  <div id="voice-diag" class="overlay hidden" role="dialog" aria-modal="true">
+    <div class="confirm-box diag-box">
+      <h3>VOICE DIAGNOSTICS</h3>
+      <pre id="vdiag-text"></pre>
+      <div id="vdiag-buttons"><button id="vdiag-test">TEST AWAAZ</button><button id="vdiag-copy">COPY</button><button id="vdiag-close">BAND KARO</button></div>
+    </div>
+  </div>
+
+  <div id="toasts" aria-live="polite"></div>
+  <div id="chapter-card" class="hidden"></div>
+
+  <!-- Main menu -->
+  <div id="menu" class="overlay">
+    <div class="menu-inner">
+      <div class="logo-sub">EK ANANT POST-APOCALYPTIC SURVIVAL ADVENTURE</div>
+      <h1 class="logo glitch" data-text="AFTER ZERO">AFTER ZERO</h1>
+      <div class="logo-tag">Mar jao. Yaad rakho. Laut aao.</div>
+      <div id="menu-buttons"></div>
+      <div id="menu-note"></div>
+    </div>
+  </div>
+
+  <!-- Panels (inventory, journal, ...) -->
+  <div id="panel" class="overlay hidden" role="dialog" aria-modal="true">
+    <div class="panel-box">
+      <div class="panel-head"><h2 id="panel-title"></h2><div id="panel-tabs"></div><button id="panel-close" aria-label="Band karein">✕</button></div>
+      <div id="panel-body"></div>
+    </div>
+  </div>
+
+  <!-- Confirm dialog -->
+  <div id="confirm" class="overlay hidden" role="alertdialog" aria-modal="true">
+    <div class="confirm-box"><p id="confirm-text"></p><div id="confirm-buttons"></div></div>
+  </div>
+
+  <!-- Death / rewind sequence -->
+  <div id="death" class="overlay hidden">
+    <div id="death-inner"></div>
+  </div>
+
+  <div id="fade"></div>
+  <div id="rotate-hint">Behtar anubhav ke liye phone ghumayein ya window badi karein.</div>
+</div>
+
+<noscript><p style="color:#ccc;font-family:monospace;padding:2em">AFTER ZERO chalane ke liye JavaScript on karna zaroori hai.</p></noscript>
+
+<!-- Core + data (plain scripts so the game runs straight from the file system, no server needed) -->
+<script src="js/util.js"></script>
+<script src="assets/manifest.js"></script>
+<script src="data/config.js"></script>
+<script src="data/characters.js"></script>
+<script src="data/locations.js"></script>
+<script src="data/story_shelter.js"></script>
+<script src="data/story_paths.js"></script>
+<script src="data/events_a.js"></script>
+<script src="data/events_b.js"></script>
+<script src="data/narration.js"></script>
+<!-- Engine -->
+<script src="js/gameState.js"></script>
+<script src="js/choiceEngine.js"></script>
+<script src="js/inventoryManager.js"></script>
+<script src="js/npcManager.js"></script>
+<script src="js/memoryManager.js"></script>
+<script src="js/checkpointManager.js"></script>
+<script src="js/timelineManager.js"></script>
+<script src="js/saveManager.js"></script>
+<script src="js/storyEngine.js"></script>
+<script src="js/eventGenerator.js"></script>
+<script src="js/validator.js"></script>
+<!-- Presentation -->
+<script src="js/art.js"></script>
+<script src="js/portraits.js"></script>
+<script src="js/sceneRenderer.js"></script>
+<script src="js/audioManager.js"></script>
+<script src="js/voiceManager.js"></script>
+<script src="js/uiManager.js"></script>
+<script src="js/panels.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

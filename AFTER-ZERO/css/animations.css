@@ -1,0 +1,40 @@
+/* AFTER ZERO — animations.css : keyframes and effect classes */
+@keyframes critpulse { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
+@keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(.3cqw); } }
+@keyframes choiceIn { from { opacity: 0; transform: translateX(-2cqw); } to { opacity: 1; transform: none; } }
+@keyframes toastIn { from { opacity: 0; transform: translateX(2cqw); } to { opacity: 1; transform: none; } }
+@keyframes toastOut { to { opacity: 0; transform: translateY(-1cqw); } }
+@keyframes cardInOut { 0% { opacity: 0; } 15% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes textglitch { 0% { transform: translateX(0); } 50% { transform: translateX(1px); text-shadow: -2px 0 #f33, 2px 0 #3ff; } 100% { transform: translateX(-1px); } }
+@keyframes shake { 0%, 100% { transform: translate(-50%, -50%); } 20% { transform: translate(calc(-50% + 6px), calc(-50% - 4px)); } 40% { transform: translate(calc(-50% - 7px), calc(-50% + 3px)); } 60% { transform: translate(calc(-50% + 4px), calc(-50% + 5px)); } 80% { transform: translate(calc(-50% - 3px), calc(-50% - 5px)); } }
+#stage.shake { animation: shake .45s steps(8) 1; }
+@keyframes flicker { 0%, 100% { opacity: 1; } 8% { opacity: .78; } 10% { opacity: 1; } 55% { opacity: .9; } 57% { opacity: 1; } }
+.logo { animation: flicker 5s steps(1) infinite; }
+.glitch::before, .glitch::after { content: attr(data-text); position: absolute; left: 0; right: 0; top: 0; overflow: hidden; pointer-events: none; }
+.glitch::before { color: #4fd0e0; text-shadow: none; opacity: 0; transform: translate(-2px, 0); clip-path: inset(0 0 62% 0); animation: glitchA 3.1s steps(1) infinite; }
+.glitch::after { color: #d6483b; text-shadow: none; opacity: 0; transform: translate(2px, 0); clip-path: inset(58% 0 0 0); animation: glitchB 2.6s steps(1) infinite; }
+@keyframes glitchA { 0%, 90%, 100% { transform: translate(0, 0); } 92% { opacity: .85; transform: translate(-5px, 1px); } 95% { opacity: .85; transform: translate(4px, -1px); } 97% { opacity: 0; } }
+@keyframes glitchB { 0%, 85%, 100% { transform: translate(0, 0); } 87% { opacity: .85; transform: translate(6px, 0); } 93% { opacity: .85; transform: translate(-4px, 1px); } 96% { opacity: 0; } }
+
+/* ---------- death & rewind ---------- */
+#death { background: #000; z-index: 85; transition: background .6s; }
+#death-inner { text-align: center; width: 70cqw; }
+#death-title { font-size: 4.2em; letter-spacing: .3em; color: var(--red); text-shadow: 0 0 1.5cqw rgba(214, 72, 59, .8); animation: deathIn 1.4s steps(12) both; }
+#death-lines { margin: 2cqw 0; min-height: 8cqw; font-size: 1.2em; line-height: 1.9; color: #cfc8b8; }
+#death-lines p { margin: 0; opacity: 0; animation: lineIn 1s steps(8) forwards; }
+#death-sub { color: var(--dim); letter-spacing: .3em; font-size: .85em; animation: critpulse 1.4s steps(2) infinite; }
+#death-memory { margin-top: 2cqw; padding: 1.2cqw 1.6cqw; background: #0a0c11; border: 1px solid var(--cyan); text-align: left; animation: lineIn 1s steps(8) both; }
+#death-memory h4 { margin: 0 0 .6cqw; color: var(--cyan); letter-spacing: .3em; font-size: .85em; } #death-memory p { margin: .35cqw 0; font-size: .95em; line-height: 1.5; color: #b8c8d0; }
+#death-memory .newk { color: var(--cyan); }
+@keyframes deathIn { 0% { opacity: 0; letter-spacing: .8em; filter: blur(8px); } 100% { opacity: 1; filter: none; } }
+@keyframes lineIn { from { opacity: 0; transform: translateY(1cqw); } to { opacity: 1; transform: none; } }
+#death.rewinding { animation: rewindBg 1.8s steps(18) forwards; }
+#death.rewinding #death-inner { animation: rewindText 1.8s steps(18) forwards; }
+@keyframes rewindBg { 0% { background: #000; } 40% { background: #10243a; } 70% { background: #4fd0e0; } 100% { background: #fff; } }
+@keyframes rewindText { 0% { transform: none; filter: none; } 30% { transform: scaleX(-1) skewX(8deg); filter: hue-rotate(120deg); } 60% { transform: scaleX(1) skewX(-14deg) scale(1.05); filter: hue-rotate(240deg) blur(1px); } 100% { transform: scale(2) skewX(0); opacity: 0; filter: blur(12px); } }
+#stage.rewind-scan::before { content: ""; position: absolute; inset: 0; z-index: 88; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(79, 208, 224, .25) 0 2px, transparent 2px 7px); animation: scanrun 1.2s linear 2; }
+@keyframes scanrun { from { transform: translateY(-14%); } to { transform: translateY(14%); } }
+@media (prefers-reduced-motion: reduce) {
+  .logo, .glitch::before, .glitch::after, #continue, .stat.crit { animation: none; }
+  #stage.shake { animation: none; }
+}
