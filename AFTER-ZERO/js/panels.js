@@ -186,7 +186,7 @@
 
     settings(body) {
       const s = S().getSettings();
-      const apply = () => { AZ.Save.saveSettings(); UI().applySettings(); };
+      const apply = () => { AZ.Save.saveSettings(); UI().applySettings(); if (AZ.TTS && (!s.ttsOn || s.muted)) AZ.TTS.stop(); };
       const slider = (label, key, min, max, step, fmt) => {
         const row = el('div', 'row'); row.appendChild(el('label', '', label));
         const inp = el('input'); inp.type = 'range'; inp.min = min; inp.max = max; inp.step = step; inp.value = s[key];
@@ -205,11 +205,39 @@
       slider('Music volume', 'musicVol', 0, 1, 0.05, (v) => Math.round(v * 100) + '%');
       slider('Sound aur mahaul volume', 'sfxVol', 0, 1, 0.05, (v) => Math.round(v * 100) + '%');
       toggle('Saari awaaz band', 'muted');
-      body.appendChild(el('div', 'sect', 'VOICE NARRATION (KAHANI SUNO)'));
-      toggle('Voice ON', 'voiceOn', 'Har scene bolkar sunaya jata hai. Phone ki apni TTS awaaz use hoti hai, internet nahi chahiye.');
-      slider('Voice volume', 'voiceVol', 0, 1, 0.05, (v) => Math.round(v * 100) + '%');
-      slider('Voice speed', 'voiceRate', 0.6, 1.5, 0.05, (v) => v.toFixed(2) + 'x');
-      toggle('Voice mute', 'voiceMuted');
+      body.appendChild(el('div', 'sect', 'AWAAZ SE PADHNA (TTS)'));
+      const T = AZ.TTS, mode = T ? T.mode() : 'none';
+      if (mode === 'none') {
+        body.appendChild(el('p', 'hist-line note-l', 'Voice: N/A — is device par text padhne wali awaaz nahi mili. Phone ki Settings mein Text-to-speech engine install / on karo.'));
+      } else {
+        toggle('Story awaaz se padho', 'ttsOn', 'Har line padhi jayegi, phir poochega: "Ab kya karoge?"');
+        toggle('Vikalp bhi padho', 'ttsChoices', 'Poochne ke baad saare options bhi bol dega.');
+        toggle('Apne aap aage badho', 'ttsAuto', 'Line padhne ke baad agli line khud aa jayegi (haath lagaye bina).');
+        slider('Bolne ki speed', 'ttsRate', 0.5, 1.5, 0.05, (v) => v.toFixed(2) + 'x');
+        const lrow = el('div', 'row'); lrow.appendChild(el('label', '', 'Bhasha / accent<br><span class="meta">Hinglish ke liye "English (India)" aam taur par sabse saaf bolti hai.</span>'));
+        const lsel = el('select'); [['en-IN', 'English (India)'], ['hi-IN', 'Hindi'], ['en-US', 'English (US)'], ['en-GB', 'English (UK)']].forEach(([v, n]) => { const o = el('option', '', n); o.value = v; lsel.appendChild(o); });
+        lsel.value = s.ttsLang || 'en-IN';
+        lsel.addEventListener('change', () => { s.ttsLang = lsel.value; s.ttsVoice = ''; apply(); fillVoices(); });
+        lrow.appendChild(lsel); body.appendChild(lrow);
+        const vrow = el('div', 'row'); const vlab = el('label', '', 'Awaaz (voice)'); vrow.appendChild(vlab);
+        const vsel = el('select'); vrow.appendChild(vsel); body.appendChild(vrow);
+        function fillVoices() {
+          if (mode === 'native') { vsel.innerHTML = ''; const o = el('option', '', 'Phone ki default voice'); o.value = ''; vsel.appendChild(o); vsel.disabled = true; vlab.innerHTML = 'Awaaz (voice)<br><span class="meta">Badalne ke liye: Phone Settings → Text-to-speech output.</span>'; return; }
+          const list = T.loadWebVoices(); vsel.innerHTML = '';
+          if (!list.length) { const o = el('option', '', 'N/A'); o.value = ''; vsel.appendChild(o); vsel.disabled = true; return; }
+          vsel.disabled = false;
+          const base = (s.ttsLang || 'en-IN').toLowerCase().split('-')[0];
+          const match = list.filter((x) => x.lang.toLowerCase().startsWith(base)), use = match.length ? match : list;
+          const auto = el('option', '', 'Automatic'); auto.value = ''; vsel.appendChild(auto);
+          use.forEach((x) => { const o = el('option', '', x.name + ' (' + x.lang + ')'); o.value = x.name; vsel.appendChild(o); });
+          vsel.value = s.ttsVoice || '';
+        }
+        vsel.addEventListener('change', () => { s.ttsVoice = vsel.value; apply(); });
+        fillVoices();
+        if (mode === 'web' && window.speechSynthesis) { setTimeout(fillVoices, 400); setTimeout(fillVoices, 1500); }
+        const trow = el('div', 'row'); trow.appendChild(el('label', '', 'Awaaz test karo'));
+        trow.appendChild(btn('TEST', '', () => { T.test(); })); body.appendChild(trow);
+      }
       body.appendChild(el('div', 'sect', 'TEXT AUR DISPLAY'));
       slider('Text ki speed', 'textSpeed', 10, 200, 5, (v) => v >= 200 ? 'TURANT' : v + ' cps');
       toggle('Mahaul ke kan (particles)', 'particles');

@@ -131,21 +131,12 @@
       const base = {
         lines: tpl.lines, choices: tpl.choices, onEnter: tpl.onEnter, chars: tpl.chars, mood: tpl.mood
       };
-      // Narration pairs [shown text, Devanagari text] travel through the same substitution so the voice can read filled-in text.
-      // (No picks inside them, so the seeded random sequence is untouched.)
-      if (AZ.narr) {
-        const nm = [], addNm = (t) => { if (typeof t === 'string' && AZ.narr[t]) nm.push([t, AZ.narr[t]]); };
-        (tpl.lines || []).forEach((l) => { addNm(l.text); addNm(l.fearText); });
-        (tpl.choices || []).forEach((c) => { addNm(c.text); addNm(c.result); });
-        base.nm = nm;
-      }
       let json = JSON.stringify(base);
       json = Events.substitute(json, map);
       // seeded [a|b|c] picks — quotes excluded so JSON arrays are never touched
       json = json.replace(/\[([^\[\]|"]+(?:\|[^\[\]|"]+)+)\]/g, (m, body) => U.pick(rng, body.split('|')));
       json = U.tpl(json, vars);
       const b = JSON.parse(json);
-      if (b.nm && AZ.Voice) b.nm.forEach((p) => AZ.Voice.learn(p[0], p[1]));
 
       const id = 'gen:' + tl.eventCount;
       return {

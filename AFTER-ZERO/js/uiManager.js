@@ -18,7 +18,6 @@
         .forEach((id) => { UI.el[id] = $(id); });
       AZ.Renderer.init(UI.el.scene);
       UI.buildStatBar();
-      if (AZ.Voice) { try { AZ.Voice.init(); } catch (e) { AZ.warn('Voice init failed: ' + e.message); } }
       UI.applySettings();
       UI.bind();
       UI.subscribe();
@@ -56,13 +55,11 @@
       UI.el.stage.classList.toggle('noscan', !s.scanlines);
       AZ.Renderer.enabledParticles = !!s.particles;
       AZ.Audio.applyVolumes();
-      if (AZ.Voice) AZ.Voice.applySettings();
     },
 
     /* ---------------------------------------------------------------- menu */
     showMenu() {
       UI.inGame = false; UI.closePanel();
-      if (AZ.Voice) { AZ.Voice.stop(); AZ.Voice.showDock(false); }
       UI.el.menu.classList.remove('hidden');
       UI.el.hud.classList.add('hidden'); UI.el.dialog.classList.add('hidden'); UI.el.choices.classList.add('hidden');
       AZ.Renderer.setView({ bg: 'ruins', bgSeed: 'menu', mood: { particles: 'ash' }, chars: [] });
@@ -101,19 +98,18 @@
       AZ.Audio.unlock();
       UI.el.menu.classList.add('hidden');
       UI.el.hud.classList.remove('hidden');
-      if (AZ.Voice) AZ.Voice.showDock(true);
       UI.inGame = true; UI.deathActive = false; UI.locked = false; UI.lastTitle = '';
+      if (AZ.TTS) { AZ.TTS.stop(); AZ.TTS.reset(); }
       if (!resume) { S().meta = S().meta || S().newMeta(); }
       AZ.Story.start(!!resume);
     },
 
-    quitToMenu() { AZ.Save.autosave(); AZ.Audio.stopAll(); UI.clearTimers(); UI.showMenu(); },
+    quitToMenu() { if (AZ.TTS) AZ.TTS.stop(); AZ.Save.autosave(); AZ.Audio.stopAll(); UI.clearTimers(); UI.showMenu(); },
 
     /* ---------------------------------------------------------------- scene flow */
     onScene(view) {
       if (!UI.inGame) return;
-      UI.view = view; UI.idx = 0; UI.locked = false; UI.choicesShown = false;
-      if (AZ.Voice) AZ.Voice.newScene();
+      UI.view = view; UI.idx = 0; UI.locked = false;
       const E = UI.el;
       AZ.Renderer.setView(view);
       AZ.Audio.setMusic(view.mood.music || 'calm'); AZ.Audio.setAmbience(view.mood.ambience || 'wind');
@@ -166,8 +162,24 @@
       E['dialog-text'].style.fontStyle = line.who ? 'normal' : 'italic';
       E['dialog-text'].style.color = line.who ? '' : '#bdb7a6';
       if (line.sfx) AZ.Audio.sfx(line.sfx);
-      if (AZ.Voice) AZ.Voice.line(line, sid);     // start speaking first so 'wait for narration' sees it
       UI.typeText(line.text);
+      if (AZ.TTS) {
+        const view = v, at = i;
+        AZ.TTS.stop();
+        AZ.TTS.sayLine(line).then((ok) => { if (ok) UI.autoNext(view, at); });
+      }
+    },
+
+    /** Optional hands-free mode: after a line is read, move on by itself. */
+    autoNext(view, at) {
+      if (!S().getSettings().ttsAuto) return;
+      let tries = 0;
+      const step = () => {
+        if (UI.view !== view || UI.idx !== at || UI.deathActive) return;
+        if (UI.typing || UI.locked || UI.panelOpen) { if (++tries < 60) setTimeout(step, 250); return; }
+        if (at < view.lines.length - 1) UI.advance();
+      };
+      setTimeout(step, 700);
     },
 
     typeText(text) {
@@ -186,28 +198,8 @@
     finishTyping() {
       clearInterval(UI.typeTimer); UI.typing = false;
       UI.el['dialog-text'].textContent = UI.fullText;
-      const last = UI.idx >= UI.view.lines.length - 1, i = UI.idx, v = UI.view;
-      if (!last) UI.el.continue.classList.remove('hidden');
-      // With voice on, wait for the narration to finish before moving on (a tap still skips ahead).
-      const next = last ? () => { if (UI.view === v && UI.idx === i) UI.showChoices(); } : () => UI.autoNext(i, v);
-      if (AZ.Voice) AZ.Voice.afterLine(next, last ? 250 : 420); else next();
-    },
-
-    /** Voice finished a line: move to the next one by itself (never picks a choice). */
-    autoNext(i, v) {
-      if (!UI.view || UI.view !== v || UI.idx !== i || UI.typing || UI.locked || UI.deathActive) return;
-      if (UI.panelOpen) { setTimeout(() => UI.autoNext(i, v), 700); return; }   // wait until the player closes the panel
-      if (UI.idx < UI.view.lines.length - 1) { AZ.Audio.sfx('click'); UI.showLine(UI.idx + 1); }
-    },
-
-    /** Replay button: read this scene again from its first line (game state is untouched). */
-    replayScene() {
-      if (!UI.inGame || !UI.view || UI.deathActive || UI.panelOpen) return;
-      if (AZ.Voice) AZ.Voice.stop();
-      clearInterval(UI.typeTimer);
-      UI.locked = false; UI.choicesShown = false;
-      UI.el.choices.classList.add('hidden'); UI.el.choices.innerHTML = '';
-      UI.showLine(0);
+      const last = UI.idx >= UI.view.lines.length - 1;
+      if (last) UI.showChoices(); else UI.el.continue.classList.remove('hidden');
     },
 
     /** Click / Space / Enter: finish the typewriter, or go to the next line. */
@@ -215,31 +207,28 @@
       if (!UI.view || UI.locked || UI.panelOpen || UI.deathActive) return;
       if (UI.typing) { UI.finishTyping(); return; }
       if (UI.idx < UI.view.lines.length - 1) { AZ.Audio.sfx('click'); UI.showLine(UI.idx + 1); }
-      else if (!UI.choicesShown) { if (AZ.Voice) AZ.Voice.stop(); UI.showChoices(); }   // tap on the last line = skip the rest of the narration
     },
 
     showChoices() {
-      if (UI.choicesShown || !UI.view) return;
-      UI.choicesShown = true;
-      UI.el['chapter-card'].classList.add('hidden');   // never let the chapter title sit on top of the choices
       const v = UI.view, box = UI.el.choices; box.innerHTML = '';
       v.choices.forEach((c, i) => {
         const b = document.createElement('button');
         b.className = 'choice' + (c.echo ? ' echo' : '');
         b.style.animationDelay = (i * 70) + 'ms';
-        b.innerHTML = '<span class="num">' + String.fromCharCode(65 + i) + '</span>' + UI.esc(c.text)
+        b.innerHTML = '<span class="num">' + (i + 1) + '</span>' + UI.esc(c.text)
           + (c.memory ? '<span class="badge mem">◆ YAAD</span>' : '') + (c.echo ? '<span class="badge echo">☠ GOONJ</span>' : '')
           + (c.tags.includes('physical') ? '<span class="badge phys">SHARIRIK</span>' : '');
         b.addEventListener('click', () => UI.pick(i, b));
         box.appendChild(b);
       });
       box.classList.remove('hidden');
-      if (AZ.Voice) AZ.Voice.announceChoices(v.choices);
+      if (AZ.TTS) AZ.TTS.askChoices(v.choices);
     },
 
     pick(i, btn) {
       if (UI.locked || UI.panelOpen || UI.deathActive) return;
       UI.locked = true;
+      if (AZ.TTS) AZ.TTS.stop();
       if (btn) btn.classList.add('picked');
       AZ.Audio.sfx('click');
       UI.later(180, () => {
@@ -301,10 +290,10 @@
     playDeath(info) {
       if (UI.deathActive) return;
       UI.deathActive = true; UI.locked = true; UI.clearTimers(); clearInterval(UI.typeTimer);
+      if (AZ.TTS) AZ.TTS.stop();
       const E = UI.el, def = info.def;
       UI.closePanel();
       E.choices.classList.add('hidden'); E.dialog.classList.add('hidden');
-      if (AZ.Voice) AZ.Voice.death(def, def.lines);
       AZ.Audio.stopMusic(); AZ.Audio.sfx('death'); AZ.Renderer.shake(); AZ.Renderer.flash(250);
       const d = E.death; d.className = 'overlay'; d.style.background = '#000';
       E['death-inner'].innerHTML = '<div id="death-title">' + UI.esc(def.title) + '</div><div id="death-lines"></div><div id="death-sub">TUM MAR GAYE · MAUT № ' + info.deathNumber + '</div>';
@@ -344,7 +333,6 @@
       UI.fadeOut(() => {
         UI.deathActive = false; UI.el.death.classList.add('hidden'); UI.el.death.style.background = '';
         UI.updateHud();
-        if (AZ.Voice) AZ.Voice.reset();
         AZ.Story.resumeAfterDeath();
         UI.fadeIn();
         UI.toast('Checkpoint wapas aa gaya. Tumhe sab yaad hai.', 'knowledge');
@@ -366,8 +354,8 @@
         if (document.activeElement && document.activeElement.classList && document.activeElement.classList.contains('choice')) return;
         e.preventDefault(); UI.advance(); return;
       }
-      if ((/^[1-9]$/.test(k) || /^[a-f]$/i.test(k)) && UI.view && !UI.typing) {
-        const i = /^[1-9]$/.test(k) ? +k - 1 : k.toLowerCase().charCodeAt(0) - 97, btn = UI.el.choices.children[i];
+      if (/^[1-9]$/.test(k) && UI.view && !UI.typing) {
+        const i = +k - 1, btn = UI.el.choices.children[i];
         if (btn && !UI.el.choices.classList.contains('hidden')) UI.pick(i, btn);
       }
     },

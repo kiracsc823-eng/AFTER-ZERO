@@ -5,10 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>AFTER ZERO</title>
 <meta name="description" content="Ek anant post-apocalyptic survival adventure. Mar jao. Yaad rakho. Laut aao.">
-<link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#07080c">
-<meta name="mobile-web-app-capable" content="yes">
-<link rel="apple-touch-icon" href="icons/icon-192.png">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230b0d12'/%3E%3Crect x='4' y='2' width='8' height='2' fill='%23d6483b'/%3E%3Crect x='3' y='4' width='2' height='8' fill='%23d6483b'/%3E%3Crect x='11' y='4' width='2' height='8' fill='%23d6483b'/%3E%3Crect x='4' y='12' width='8' height='2' fill='%23d6483b'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/animations.css">
@@ -48,32 +44,6 @@
       <div id="dialog-text" aria-live="polite"></div>
     </div>
     <button id="continue" aria-label="Aage badhein">▼</button>
-  </div>
-
-  <!-- Voice controls (compact) -->
-  <div id="voice-dock" class="hidden" role="group" aria-label="Voice narration">
-    <button id="vd-toggle" title="Voice ON/OFF">VOICE ON</button>
-    <div id="vd-bars" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
-    <div class="vd-row">
-      <button id="vd-replay" title="Replay narration" aria-label="Replay narration">&#8635;</button>
-      <button id="vd-pause" title="Pause / Resume" aria-label="Pause or resume">&#10074;&#10074;</button>
-      <button id="vd-more" title="Volume, speed, language" aria-label="Voice settings">&#9881;</button>
-    </div>
-    <button id="vd-mute" title="Mute voice">MUTE</button>
-    <div id="vd-pop" class="hidden">
-      <label>VOLUME <input id="vd-vol" type="range" min="0" max="1" step="0.05"></label>
-      <label>SPEED <input id="vd-rate" type="range" min="0.6" max="1.5" step="0.05"></label>
-      <button id="vd-diag" title="Voice diagnostics">DIAG</button>
-      <label>BHASHA <select id="vd-lang"><option value="auto">Auto</option><option value="hi">Hindi</option><option value="en">English / Hinglish</option></select></label>
-    </div>
-  </div>
-
-  <div id="voice-diag" class="overlay hidden" role="dialog" aria-modal="true">
-    <div class="confirm-box diag-box">
-      <h3>VOICE DIAGNOSTICS</h3>
-      <pre id="vdiag-text"></pre>
-      <div id="vdiag-buttons"><button id="vdiag-test">TEST AWAAZ</button><button id="vdiag-copy">COPY</button><button id="vdiag-close">BAND KARO</button></div>
-    </div>
   </div>
 
   <div id="toasts" aria-live="polite"></div>
@@ -124,7 +94,6 @@
 <script src="data/story_paths.js"></script>
 <script src="data/events_a.js"></script>
 <script src="data/events_b.js"></script>
-<script src="data/narration.js"></script>
 <!-- Engine -->
 <script src="js/gameState.js"></script>
 <script src="js/choiceEngine.js"></script>
@@ -142,7 +111,7 @@
 <script src="js/portraits.js"></script>
 <script src="js/sceneRenderer.js"></script>
 <script src="js/audioManager.js"></script>
-<script src="js/voiceManager.js"></script>
+<script src="js/tts.js"></script>
 <script src="js/uiManager.js"></script>
 <script src="js/panels.js"></script>
 <script src="js/main.js"></script>

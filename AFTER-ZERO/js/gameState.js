@@ -23,7 +23,7 @@
   };
 
   State.defaultSettings = function () {
-    return { musicVol: 0.5, sfxVol: 0.7, textSpeed: 28, muted: false, echoSense: true, particles: true, scanlines: true, shake: true, voiceOn: true, voiceVol: 1, voiceRate: 1, voiceMuted: false, voiceLang: 'auto' };
+    return { musicVol: 0.5, sfxVol: 0.7, textSpeed: 28, muted: false, echoSense: true, particles: true, scanlines: true, shake: true, ttsOn: true, ttsChoices: true, ttsAuto: false, ttsRate: 0.95, ttsLang: 'en-IN', ttsVoice: '' };
   };
 
   /** Brand-new permanent profile. */

@@ -44,8 +44,5 @@
     } catch (e) { /* ignore */ }
   });
 
-  // Installable + offline when served over http(s) (Chrome "Add to Home screen"). Ignored on file:// and in APK wrappers.
-  try { if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) { /* ignore */ }
-
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();
